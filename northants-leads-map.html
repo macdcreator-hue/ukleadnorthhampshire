@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Northants Lead Hunter — MacDcreator</title>
+<style>
+:root{
+  --bg:#0b0f17;--panel:#121826;--panel2:#1a2235;--line:#243049;
+  --text:#e9eef9;--muted:#8a97b3;--accent:#7c5cff;--accent2:#22d3ee;
+  --new:#3b82f6;--contacted:#f59e0b;--maybe:#ec4899;--acquired:#10b981;
+  --high:#10b981;--med:#f59e0b;--low:#94a3b8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+#app{display:grid;grid-template-columns:370px 1fr;height:100vh}
+
+/* ── SIDEBAR ── */
+#sidebar{background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+#hdr{padding:16px 16px 12px;border-bottom:1px solid var(--line)}
+#hdr h1{font-size:17px;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;margin-bottom:3px}
+#hdr .sub{font-size:11px;color:var(--muted)}
+#stats{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.stat{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:7px 4px;text-align:center}
+.stat .n{font-size:17px;font-weight:700}.stat .l{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.stat.s-new .n{color:var(--new)}.stat.s-contacted .n{color:var(--contacted)}
+.stat.s-maybe .n{color:var(--maybe)}.stat.s-acquired .n{color:var(--acquired)}
+#prog-wrap{padding:10px 14px;border-bottom:1px solid var(--line)}
+#prog-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+#prog-bar{height:8px;background:var(--panel2);border-radius:6px;overflow:hidden;border:1px solid var(--line)}
+#prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--acquired));width:0%;transition:width .6s}
+#filters{padding:10px 14px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:5px}
+.chip{font-size:10px;padding:4px 9px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--muted);cursor:pointer;user-select:none;transition:all .15s}
+.chip:hover{color:var(--text);border-color:var(--accent)}.chip.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+#search-wrap{padding:8px 14px;border-bottom:1px solid var(--line)}
+#search{width:100%;padding:8px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;color:var(--text);font-size:12px;outline:none}
+#search:focus{border-color:var(--accent)}
+#lead-list{flex:1;overflow-y:auto;padding:6px 8px}
+#lead-list::-webkit-scrollbar{width:6px}
+#lead-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px}
+.lead{padding:9px 11px;margin:4px 0;background:var(--panel2);border:1px solid var(--line);border-left:3px solid var(--new);border-radius:7px;cursor:pointer;transition:all .15s}
+.lead:hover{border-color:var(--accent);transform:translateX(2px)}
+.lead.st-contacted{border-left-color:var(--contacted)}.lead.st-maybe{border-left-color:var(--maybe)}
+.lead.st-acquired{border-left-color:var(--acquired);opacity:.55}
+.lead .nm{font-weight:600;font-size:12px;display:flex;justify-content:space-between;align-items:center}
+.lead .mt{font-size:10px;color:var(--muted);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap}
+.badge{font-size:9px;padding:2px 5px;border-radius:3px;font-weight:700;background:var(--panel);text-transform:uppercase;letter-spacing:.4px}
+.badge.HIGH{color:var(--high);border:1px solid var(--high)}.badge.MEDIUM{color:var(--med);border:1px solid var(--med)}.badge.LOW{color:var(--low);border:1px solid var(--low)}
+#foot{padding:9px 14px;border-top:1px solid var(--line);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+#reset-btn{background:none;border:1px solid var(--line);color:var(--muted);padding:3px 8px;border-radius:5px;font-size:10px;cursor:pointer;margin-left:auto}
+#reset-btn:hover{color:#ff6b6b;border-color:#ff6b6b}
+
+/* ── MAP ── */
+#map-wrap{position:relative;overflow:hidden;background:#0d1117}
+#map-canvas{display:block;cursor:grab}
+#map-canvas.dragging{cursor:grabbing}
+
+/* ── POPUP ── */
+#popup{position:absolute;display:none;min-width:290px;max-width:330px;background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.6);z-index:10;padding:14px 16px;font-size:12px}
+#popup-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1}
+#popup-close:hover{color:var(--text)}
+#popup h3{font-size:14px;margin-bottom:2px;padding-right:20px}
+#popup .cat{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.pr{display:flex;justify-content:space-between;padding:3px 0;border-top:1px dashed var(--line);gap:8px}
+.pr .k{color:var(--muted);white-space:nowrap}.pr .v{text-align:right;font-size:11px}
+.pr a{color:var(--accent2);text-decoration:none}.pr a:hover{text-decoration:underline}
+#popup .pitch{margin-top:9px;padding:8px 10px;background:var(--panel2);border-left:2px solid var(--accent);border-radius:5px;font-size:11px;line-height:1.5;color:#cbd5e1;font-style:italic}
+#popup .acts{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:10px}
+#popup .acts button{background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:6px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;transition:all .12s}
+#popup .acts button:hover{border-color:var(--accent)}
+#popup .acts button.on-new{background:var(--new);border-color:var(--new)}
+#popup .acts button.on-contacted{background:var(--contacted);border-color:var(--contacted);color:#111}
+#popup .acts button.on-maybe{background:var(--maybe);border-color:var(--maybe)}
+#popup .acts button.on-acquired{background:var(--acquired);border-color:var(--acquired)}
+#attrib{position:absolute;bottom:4px;right:6px;font-size:9px;color:rgba(255,255,255,.35);z-index:5;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="sidebar">
+    <div id="hdr">
+      <h1>Northants Lead Hunter</h1>
+      <div class="sub">24 verified leads · click a pin or list item · Apr 2026</div>
+    </div>
+    <div id="stats">
+      <div class="stat s-new"><div class="n" id="cnt-new">0</div><div class="l">New</div></div>
+      <div class="stat s-contacted"><div class="n" id="cnt-contacted">0</div><div class="l">Contacted</div></div>
+      <div class="stat s-maybe"><div class="n" id="cnt-maybe">0</div><div class="l">Maybe</div></div>
+      <div class="stat s-acquired"><div class="n" id="cnt-acquired">0</div><div class="l">Acquired</div></div>
+    </div>
+    <div id="prog-wrap">
+      <div id="prog-lbl"><span>Conquest progress</span><span id="prog-pct">0%</span></div>
+      <div id="prog-bar"><div id="prog-fill"></div></div>
+    </div>
+    <div id="filters"></div>
+    <div id="search-wrap"><input id="search" placeholder="Search by name, town, category…"/></div>
+    <div id="lead-list"></div>
+    <div id="foot">
+      <span>24 verified leads · MacDcreator</span>
+      <button id="reset-btn">Reset all</button>
+    </div>
+  </aside>
+
+  <div id="map-wrap">
+    <canvas id="map-canvas"></canvas>
+    <div id="attrib">© OpenStreetMap contributors</div>
+    <div id="popup">
+      <button id="popup-close">×</button>
+      <h3 id="pop-name"></h3>
+      <div id="pop-cat" class="cat"></div>
+      <div id="pop-rows"></div>
+      <div id="pop-pitch" class="pitch"></div>
+      <div class="acts">
+        <button data-s="new">New</button>
+        <button data-s="contacted">Contacted</button>
+        <button data-s="maybe">Maybe</button>
+        <button data-s="acquired">Acquired ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LEADS=[
+  {id:1,name:"Aurora Hairdressing",town:"Northampton (NN1)",cat:"Hair Salon",rating:4.8,reviews:176,lat:52.2387,lng:-0.8943,addr:"19 Castilian St, NN1 1JS",web:"aurorahairdressing.co.uk",webNote:"Older WordPress, basic photo grid, weak mobile",ig:"@aurorahairdressing",followers:2265,contact:"DMs active · 01604 230033",score:"HIGH",pitch:"High-end hair clients won't book a £120 colour from a website that looks like 2014 — a cinematic salon site converts Instagram followers into bookings."},
+  {id:2,name:"MAJOR Hairdressing",town:"Northampton",cat:"Hair Salon",rating:4.7,reviews:230,lat:52.2401,lng:-0.9015,addr:"Multi-location · family run since 1992",web:"majorhairdressing.co.uk",webNote:"Visually dated, weak hero, no animation, slow load",ig:"@majorhairdressing",followers:3663,contact:"DMs active",score:"HIGH",pitch:"32 years of brand equity wasted on a tired site — a premium rebuild could push them into the £150+ treatment market."},
+  {id:3,name:"The Factory Hair Studio",town:"Northampton (NN5)",cat:"Hair Salon",rating:4.7,reviews:120,lat:52.2371,lng:-0.9216,addr:"The Maltings, St James' Rd NN5 5HS",web:"thefactoryhairstudio.co.uk",webNote:"Generic template, no editorial photography",ig:"@the_factory_hair_studio",followers:775,contact:"01604 345946 · DMs active",score:"MEDIUM",pitch:"Owner genuinely believes in great hair for all — a polished site would let him charge what his stylists deserve."},
+  {id:4,name:"Maniatiko Greek Restaurant",town:"Northampton (NN1)",cat:"Restaurant",rating:4.8,reviews:195,lat:52.2454,lng:-0.8825,addr:"157-159A Wellingborough Rd NN1 4DX",web:"maniatikorestaurant.com",webNote:"Functional but dated, no booking flow, weak photography",ig:"@maniatiko_greek_restaurant",followers:533,contact:"01933 522652",score:"MEDIUM",pitch:"A cinematic site telling the Mani Peninsula story turns one-time diners into regulars and pulls event bookings."},
+  {id:5,name:"Oblique Cafe Bar Kitchen",town:"Northampton (NN1)",cat:"Restaurant",rating:4.7,reviews:573,lat:52.2461,lng:-0.8782,addr:"254 Wellingborough Rd, Northampton",web:"oblique-northampton.co.uk",webNote:"Basic Squarespace, photography underused",ig:"@oblique_kitchen_bar",followers:4200,contact:"DMs active · contact form",score:"HIGH",pitch:"They own the brunch aesthetic on Instagram — a premium site locks in private dining bookings and live-music event sales."},
+  {id:6,name:"Matchbox Cafe",town:"Northampton (NN1)",cat:"Cafe",rating:4.6,reviews:210,lat:52.2393,lng:-0.8946,addr:"47 Abington St, Northampton NN1 2AW",web:"None",webNote:"No real website — only a third-party Foodjoyy listing",ig:"@matchboxcafenorthampton",followers:980,contact:"DMs active",score:"HIGH",pitch:"Highest-trafficked street in Northampton, vegan-friendly niche, zero website — a modern site captures every Google search for 'vegan Abington Street'."},
+  {id:7,name:"Magee Street Bakery",town:"Northampton (NN5)",cat:"Bakery",rating:4.7,reviews:850,lat:52.2378,lng:-0.9094,addr:"Magee St, Northampton NN5",web:"mageestreetbakery.co.uk",webNote:"Plain Wix-style, weak typography, no online ordering",ig:"@mageestbakery",followers:9642,contact:"DMs very active",score:"HIGH",pitch:"Nearly 10k engaged IG followers + queues daily — order-ahead and brunch booking would convert massive existing demand."},
+  {id:8,name:"Duston Village Bakery",town:"Duston (NN5)",cat:"Bakery",rating:5.0,reviews:140,lat:52.2424,lng:-0.9498,addr:"Pendle Rd, Duston, Northampton NN5",web:"dustonvillagebakery.co.uk",webNote:"Pre-2015 design, tiny mobile font, no real photography",ig:"@dustonvillagebakery",followers:1871,contact:"DMs active · Facebook",score:"HIGH",pitch:"Best bakery in Northants per reviews — a premium site unlocks wholesale and corporate cake orders."},
+  {id:9,name:"The Good Loaf",town:"Northampton (NN1)",cat:"Bakery",rating:4.6,reviews:330,lat:52.2404,lng:-0.8985,addr:"St Giles' Terrace, Northampton",web:"thegoodloaf.co.uk",webNote:"Charity-style site, visually flat, weak storytelling",ig:"@goodloafuk",followers:3256,contact:"DMs active · email public",score:"HIGH",pitch:"Their social-enterprise story is powerful but invisible on the current site — a redesign turns mission into corporate catering contracts."},
+  {id:10,name:"The Little Bakery of Happiness",town:"Wellingborough (NN8)",cat:"Bakery",rating:4.9,reviews:165,lat:52.3036,lng:-0.6929,addr:"Nene Court Shopping Village, Wellingborough",web:"thelittlebakeryofhappiness.co.uk",webNote:"Older theme, slow load, gluten-free niche buried",ig:"@littlebakeryofhappiness",followers:2400,contact:"DMs active",score:"HIGH",pitch:"Gluten-free is a high-intent search niche — a premium SEO-ready site would dominate Northants searches for years."},
+  {id:11,name:"Bulldog and Bear Barber Co",town:"Brixworth (NN6)",cat:"Barbershop",rating:5.0,reviews:445,lat:52.3265,lng:-0.9011,addr:"130 Northampton Rd, Brixworth NN6 9BU",web:"bulldogandbear.co.uk",webNote:"Plain template, no booking integration on landing",ig:"@bulldogandbear",followers:1850,contact:"DMs active",score:"MEDIUM",pitch:"5★ from 445 reviews and SEN-friendly USP — brand storytelling site justifies premium beard-grooming pricing."},
+  {id:12,name:"The Neighbourhood Barbershop",town:"Northampton (NN1)",cat:"Barbershop",rating:4.9,reviews:180,lat:52.2479,lng:-0.8762,addr:"327 Wellingborough Rd, Northampton",web:"None",webNote:"No real website — only a Nearcut booking subdomain",ig:"@nbhd.nn",followers:2281,contact:"DMs active",score:"HIGH",pitch:"Won Best Barbershop 2024 but loses every Google search to chains — a real site with their interior would print money."},
+  {id:13,name:"H. Cutting Company",town:"Northampton (NN1)",cat:"Barbershop",rating:4.9,reviews:140,lat:52.2459,lng:-0.8819,addr:"241 Wellingborough Rd, Northampton",web:"None",webNote:"No real website — Nearcut subdomain only",ig:"@hcuttingco",followers:1450,contact:"DMs active",score:"HIGH",pitch:"They've added a male-aesthetics room (Brotox, IVs) — a £100+ service that needs a real website to sell credibly."},
+  {id:14,name:"Beckets Barbershop",town:"Northampton (NN1)",cat:"Barbershop",rating:4.8,reviews:160,lat:52.2456,lng:-0.8835,addr:"222 Wellingborough Rd, Northampton NN1 4EQ",web:"None",webNote:"No website at all — Facebook + Instagram only",ig:"@becketsnorthampton",followers:1302,contact:"DMs active · 01604 631081",score:"HIGH",pitch:"Traditional Gentlemen's Hairdressing is a strong premium positioning — a heritage-styled website justifies Mayfair-level pricing."},
+  {id:15,name:"The Barber Brothers",town:"Northampton (NN1)",cat:"Barbershop",rating:5.0,reviews:180,lat:52.2435,lng:-0.8917,addr:"179 Kettering Rd, Northampton NN1 4BP",web:"thebarberbrothers.co.uk",webNote:"Nearcut wrapper — no brand identity whatsoever",ig:"@thebarberbrothers_uk",followers:1208,contact:"DMs active · 01604 345712",score:"HIGH",pitch:"Two young brothers, perfect 5★, modern interior — they need a site that matches the shop's aesthetic to attract executive clientele."},
+  {id:16,name:"Fong Retreat",town:"Little Houghton (NN7)",cat:"Spa & Wellness",rating:4.4,reviews:139,lat:52.2231,lng:-0.7989,addr:"Little Houghton, Northampton NN7",web:"fongretreat.co.uk",webNote:"Generic Squarespace — doesn't reflect converted-stables luxury",ig:"@fongretreat",followers:850,contact:"DMs active · contact form",score:"MEDIUM",pitch:"A luxury spa with a generic website loses every booking the moment a competitor's site looks more premium on Google."},
+  {id:17,name:"York Cottage Spa",town:"Bozeat (NN29)",cat:"Spa & Wellness",rating:4.9,reviews:209,lat:52.2304,lng:-0.6748,addr:"Bozeat, nr Wellingborough",web:"yorkcottagespa.com",webNote:"Decent but templated — doesn't reflect £2k+ whole-house hire",ig:"@yorkcottagespa",followers:10000,contact:"DMs very active · contact form",score:"HIGH",pitch:"Whole-house private spa hire is a £2k+ booking — buyers judge the website in 8 seconds. A cinematic site justifies a 30% price uplift."},
+  {id:18,name:"Kafe Bloc",town:"Kettering (NN16)",cat:"Cafe",rating:4.6,reviews:380,lat:52.3978,lng:-0.7253,addr:"4 Piccadilly Buildings, Sheep St, Kettering NN16",web:"kafebloc.com",webNote:"Old, slow, basic — doesn't match Cultural Quarter bistro feel",ig:"@kafe.bloc",followers:2100,contact:"DMs active · email public",score:"HIGH",pitch:"British-Mediterranean tapas in Kettering's Cultural Quarter — a stylish site converts evening bookings instead of just lunch walk-ins."},
+  {id:19,name:"Pizzeria Venezia",town:"Rushden (NN10)",cat:"Restaurant",rating:4.7,reviews:722,lat:52.2858,lng:-0.5996,addr:"28-30 Church St, Rushden NN10",web:"pizzeriavenezia.co.uk",webNote:"Pre-2015 design, no online booking, mobile barely usable",ig:"@pizzeriaveneziarushden",followers:792,contact:"DMs active",score:"HIGH",pitch:"Family-run since 1987, 96% recommendation — a heritage site with online ordering unlocks the takeaway market they're missing."},
+  {id:20,name:"Crystal Tips Nail & Beauty",town:"Kettering (NN16)",cat:"Beauty Salon",rating:4.8,reviews:108,lat:52.3992,lng:-0.7237,addr:"33 Montagu St, Kettering NN16",web:"None",webNote:"No real website — auto-generated directory pages only",ig:"@crystaltips_kettering",followers:3033,contact:"DMs very active · 07772 709519",score:"HIGH",pitch:"3k engaged IG followers with no website — every booking goes through DMs, leaking 30% of demand. A real site captures it all."},
+  {id:21,name:"Mexican Fire Garden",town:"Kettering (NN15)",cat:"Restaurant",rating:4.7,reviews:903,lat:52.4011,lng:-0.7220,addr:"7 Grange Place, Kettering",web:"mexicanfiregarden.com",webNote:"Basic template, weak food photography, no family story",ig:"@official_mexicanfiregarden",followers:1900,contact:"DMs active · contact form",score:"HIGH",pitch:"'Hidden gem' positioning is wasted without a website that screams discovery — a cinematic site turns the location into a destination story."},
+  {id:22,name:"David Cosby Estate Agents",town:"Towcester (NN12)",cat:"Estate Agent",rating:4.9,reviews:215,lat:52.1335,lng:-0.9931,addr:"Towcester — independent, family-run 20+ yrs",web:"davidcosby.co.uk",webNote:"Functional but dated, weak property photography",ig:"@davidcosbyestateagents",followers:680,contact:"Email public · DMs active",score:"LOW",pitch:"Independent estate agents can't compete with Purplebricks on tech — a premium site is the only thing that justifies their fee to high-end vendors."},
+  {id:23,name:"44 Derngate Dental",town:"Northampton (NN1)",cat:"Dental Clinic",rating:4.8,reviews:175,lat:52.2387,lng:-0.8939,addr:"44 Derngate, Northampton NN1 1UH",web:"44derngate.co.uk",webNote:"Aging site, weak treatment journey, no patient stories",ig:"@44derngate",followers:1100,contact:"Email public · contact form",score:"MEDIUM",pitch:"Private dental is now a luxury purchase — a modern site directly increases £3k+ Invisalign enquiries."},
+  {id:24,name:"Saving Smiles Dental",town:"Weedon (NN7)",cat:"Dental Clinic",rating:4.9,reviews:120,lat:52.2287,lng:-1.0823,addr:"Weedon Bec, Northampton (+ Rushden branch)",web:"savingsmiles.dental",webNote:"Template-y, weak before/after gallery, no booking flow",ig:"@savingsmilesdental",followers:560,contact:"Contact form · email public",score:"MEDIUM",pitch:"Two-location private practice — a premium site lifts them from 'local NHS dentist' into proper cosmetic territory."}
+];
+
+/* ── STATE ── */
+const SK="northants-v2";
+let state={};
+try{state=JSON.parse(localStorage.getItem(SK))||{};}catch(e){}
+LEADS.forEach(l=>{if(!state[l.id])state[l.id]={status:"new"};});
+function save(){localStorage.setItem(SK,JSON.stringify(state));}
+
+/* ── MAP ENGINE ── */
+const D2R=Math.PI/180,R2D=180/Math.PI,TILE=256;
+function ll2w(lat,lng,z){const s=Math.pow(2,z);return{x:(lng+180)/360*s*TILE,y:(0.5-Math.log((1+Math.sin(lat*D2R))/(1-Math.sin(lat*D2R)))/(4*Math.PI))*s*TILE};}
+function w2ll(wx,wy,z){const s=Math.pow(2,z);return{lat:Math.atan(Math.sinh(Math.PI-2*Math.PI*wy/(s*TILE)))*R2D,lng:wx/(s*TILE)*360-180};}
+
+const canvas=document.getElementById("map-canvas");
+const wrap=document.getElementById("map-wrap");
+const ctx=canvas.getContext("2d");
+let vLat=52.28,vLng=-0.82,zoom=10,activeLead=null;
+const cache={},hits=[];
+
+function tileUrl(tx,ty,tz){const s=["a","b","c"][Math.abs(tx+ty)%3];const n=Math.pow(2,tz);const ntx=((tx%n)+n)%n;return`https://${s}.tile.openstreetmap.org/${tz}/${ntx}/${ty}.png`;}
+function getTile(url){if(cache[url])return cache[url];const i=new Image();i.crossOrigin="anonymous";i.onload=()=>{i._ok=true;draw();};i.src=url;return cache[url]=i;}
+
+function draw(){
+  const W=canvas.width,H=canvas.height;
+  ctx.fillStyle="#1a1a2e";ctx.fillRect(0,0,W,H);
+  const iz=Math.round(zoom),sc=Math.pow(2,zoom-iz),ts=TILE*sc;
+  const c=ll2w(vLat,vLng,iz);
+  const ox=c.x*sc-W/2,oy=c.y*sc-H/2;
+  for(let tx=Math.floor(ox/ts);tx<=Math.ceil((ox+W)/ts);tx++){
+    for(let ty=Math.floor(oy/ts);ty<=Math.ceil((oy+H)/ts);ty++){
+      if(ty<0||ty>=Math.pow(2,iz))continue;
+      const img=getTile(tileUrl(tx,ty,iz));
+      const px=tx*ts-ox,py=ty*ts-oy;
+      if(img._ok)ctx.drawImage(img,px,py,ts,ts);
+      else{ctx.fillStyle="#1e2a3a";ctx.fillRect(px,py,ts-1,ts-1);}
+    }
+  }
+  hits.length=0;
+  LEADS.forEach(l=>{
+    const w=ll2w(l.lat,l.lng,iz);
+    const px=w.x*sc-ox,py=w.y*sc-oy;
+    if(px<-30||px>W+30||py<-30||py>H+30)return;
+    drawPin(px,py,l);hits.push({id:l.id,px,py});
+  });
+}
+
+const SC={new:"#3b82f6",contacted:"#f59e0b",maybe:"#ec4899",acquired:"#10b981"};
+function drawPin(x,y,l){
+  const col=SC[state[l.id].status]||"#3b82f6";
+  const al=state[l.id].status==="acquired"?.4:1;
+  const isAct=activeLead&&activeLead.id===l.id;
+  const r=isAct?14:11;
+  ctx.save();ctx.globalAlpha=al;
+  ctx.shadowColor="rgba(0,0,0,.7)";ctx.shadowBlur=10;ctx.shadowOffsetY=4;
+  ctx.beginPath();ctx.arc(x,y-r-3,r,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();
+  ctx.strokeStyle="#fff";ctx.lineWidth=2;ctx.stroke();
+  ctx.beginPath();ctx.moveTo(x-5,y-r+1);ctx.lineTo(x,y+5);ctx.lineTo(x+5,y-r+1);ctx.fillStyle=col;ctx.fill();
+  ctx.shadowBlur=0;
+  ctx.beginPath();ctx.arc(x,y-r-3,r*.38,0,Math.PI*2);ctx.fillStyle="rgba(255,255,255,.9)";ctx.fill();
+  if(l.score==="HIGH"){
+    ctx.beginPath();ctx.arc(x+r,y-2*r-2,5,0,Math.PI*2);
+    ctx.fillStyle="#fbbf24";ctx.fill();ctx.strokeStyle="#fff";ctx.lineWidth=1;ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function resize(){canvas.width=wrap.clientWidth;canvas.height=wrap.clientHeight;draw();}
+window.addEventListener("resize",resize);resize();
+
+/* ── PAN ── */
+let drag=false,lx=0,ly=0;
+canvas.addEventListener("mousedown",e=>{if(e.button)return;drag=true;lx=e.clientX;ly=e.clientY;canvas.classList.add("dragging");});
+window.addEventListener("mousemove",e=>{
+  if(!drag)return;
+  const iz=Math.round(zoom),sc=Math.pow(2,zoom-iz);
+  const c=ll2w(vLat,vLng,iz);
+  const nl=w2ll((c.x*sc-(e.clientX-lx))/sc,(c.y*sc-(e.clientY-ly))/sc,iz);
+  vLat=Math.max(-85,Math.min(85,nl.lat));vLng=nl.lng;lx=e.clientX;ly=e.clientY;draw();hidePopup();
+});
+window.addEventListener("mouseup",()=>{drag=false;canvas.classList.remove("dragging");});
+
+/* ── TOUCH ── */
+let lt=null;
+canvas.addEventListener("touchstart",e=>{lt=e.touches[0];e.preventDefault();},{passive:false});
+canvas.addEventListener("touchmove",e=>{
+  if(!lt)return;const t=e.touches[0];
+  const iz=Math.round(zoom),sc=Math.pow(2,zoom-iz);
+  const c=ll2w(vLat,vLng,iz);
+  const nl=w2ll((c.x*sc-(t.clientX-lt.clientX))/sc,(c.y*sc-(t.clientY-lt.clientY))/sc,iz);
+  vLat=Math.max(-85,Math.min(85,nl.lat));vLng=nl.lng;lt=t;draw();hidePopup();
+  e.preventDefault();
+},{passive:false});
+canvas.addEventListener("touchend",()=>{lt=null;});
+
+/* ── ZOOM ── */
+canvas.addEventListener("wheel",e=>{e.preventDefault();zoom=Math.max(8,Math.min(18,zoom+(e.deltaY>0?-.35:.35)));draw();hidePopup();},{passive:false});
+
+/* ── CLICK ── */
+canvas.addEventListener("click",e=>{
+  const r=canvas.getBoundingClientRect(),cx=e.clientX-r.left,cy=e.clientY-r.top;
+  let hit=null,best=999;
+  hits.forEach(h=>{const d=Math.hypot(cx-h.px,cy-h.py-13);if(d<24&&d<best){best=d;hit=h;}});
+  if(hit){activeLead=LEADS.find(l=>l.id===hit.id);draw();showPopup(activeLead,hit.px,hit.py);}
+  else{activeLead=null;draw();hidePopup();}
+});
+
+/* ── POPUP ── */
+const popup=document.getElementById("popup");
+function showPopup(l,px,py){
+  document.getElementById("pop-name").textContent=l.name;
+  const sc=l.score==="HIGH"?"#10b981":l.score==="MEDIUM"?"#f59e0b":"#94a3b8";
+  document.getElementById("pop-cat").innerHTML=`${l.cat} · ${l.town} · <span style="color:${sc};font-weight:700">${l.score}</span>`;
+  const ws=l.web==="None"?`<span style="color:#ec4899">None</span>`:`<a href="https://${l.web}" target="_blank">${l.web}</a>`;
+  const ig=`<a href="https://instagram.com/${l.ig.replace("@","")}" target="_blank">${l.ig}</a>`;
+  document.getElementById("pop-rows").innerHTML=`
+    <div class="pr"><span class="k">Rating</span><span class="v">★ ${l.rating} (${l.reviews})</span></div>
+    <div class="pr"><span class="k">Address</span><span class="v">${l.addr}</span></div>
+    <div class="pr"><span class="k">Website</span><span class="v">${ws}</span></div>
+    <div class="pr"><span class="k">Site notes</span><span class="v">${l.webNote}</span></div>
+    <div class="pr"><span class="k">Instagram</span><span class="v">${ig} · ${l.followers.toLocaleString()}</span></div>
+    <div class="pr"><span class="k">Contact</span><span class="v">${l.contact}</span></div>`;
+  document.getElementById("pop-pitch").textContent=l.pitch;
+  updateBtns(l.id);
+  popup.style.display="block";
+  const W=canvas.width,H=canvas.height,pw=popup.offsetWidth||320,ph=popup.offsetHeight||380;
+  let left=px+20,top=py-ph/2;
+  if(left+pw>W-10)left=px-pw-20;
+  top=Math.max(10,Math.min(top,H-ph-10));
+  popup.style.left=left+"px";popup.style.top=top+"px";
+}
+function hidePopup(){popup.style.display="none";}
+function updateBtns(id){
+  const st=state[id].status;
+  popup.querySelectorAll(".acts button").forEach(b=>{b.className=b.dataset.s===st?"on-"+st:"";});
+}
+document.getElementById("popup-close").onclick=()=>{activeLead=null;hidePopup();draw();};
+popup.querySelectorAll(".acts button").forEach(b=>{
+  b.onclick=()=>{
+    if(!activeLead)return;
+    state[activeLead.id].status=b.dataset.s;
+    save();updateBtns(activeLead.id);draw();renderSidebar();
+  };
+});
+
+/* ── SIDEBAR ── */
+const cats=[...new Set(LEADS.map(l=>l.cat))];
+let activeFilter="ALL",searchQ="";
+function renderFilters(){
+  const f=document.getElementById("filters");f.innerHTML="";
+  ["ALL",...cats].forEach(c=>{
+    const el=document.createElement("div");el.className="chip"+(activeFilter===c?" active":"");
+    el.textContent=c==="ALL"?`All (${LEADS.length})`:c;
+    el.onclick=()=>{activeFilter=c;renderFilters();renderList();};
+    f.appendChild(el);
+  });
+}
+function renderList(){
+  const list=document.getElementById("lead-list");list.innerHTML="";
+  const ord={HIGH:0,MEDIUM:1,LOW:2};
+  LEADS.filter(l=>(activeFilter==="ALL"||l.cat===activeFilter)&&(!searchQ||(l.name+l.town+l.cat).toLowerCase().includes(searchQ.toLowerCase())))
+    .sort((a,b)=>ord[a.score]-ord[b.score])
+    .forEach(l=>{
+      const st=state[l.id].status;
+      const el=document.createElement("div");el.className=`lead st-${st}`;
+      el.innerHTML=`<div class="nm">${l.name}<span class="badge ${l.score}">${l.score}</span></div><div class="mt"><span>${l.cat}</span><span>${l.town}</span><span>★ ${l.rating}</span><span>IG ${l.followers.toLocaleString()}</span></div>`;
+      el.onclick=()=>{
+        zoom=14;vLat=l.lat;vLng=l.lng;activeLead=l;draw();
+        setTimeout(()=>{const h=hits.find(h=>h.id===l.id);if(h)showPopup(l,h.px,h.py);},80);
+      };
+      list.appendChild(el);
+    });
+}
+function renderStats(){
+  const c={new:0,contacted:0,maybe:0,acquired:0};
+  LEADS.forEach(l=>c[state[l.id].status]++);
+  ["new","contacted","maybe","acquired"].forEach(k=>document.getElementById("cnt-"+k).textContent=c[k]);
+  const pct=Math.round(100*c.acquired/LEADS.length);
+  document.getElementById("prog-fill").style.width=pct+"%";
+  document.getElementById("prog-pct").textContent=pct+"%";
+}
+function renderSidebar(){renderFilters();renderList();renderStats();}
+
+document.getElementById("search").oninput=e=>{searchQ=e.target.value;renderList();};
+document.getElementById("reset-btn").onclick=()=>{
+  if(!confirm("Reset all status to New?"))return;
+  LEADS.forEach(l=>state[l.id]={status:"new"});save();activeLead=null;draw();renderSidebar();
+};
+renderSidebar();
+</script>
+</body>
+</html>
